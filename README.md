@@ -18,12 +18,6 @@ Once you have everything installed, run `make`.
 This will output `aprsweb` as an ARMv6 Linux binary, and
 `aprsweb-native` as whatever architecture/OS you're compiling on now.
 
-# Running 
-
-
-Specify your direwolf/agwpe server as `-l` and which port Direwolf is
-running on as `-p`.
-
 
 # Development
 When hacking locally, run `bindata` with debug mode enabled so you can
