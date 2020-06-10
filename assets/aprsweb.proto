@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package net.sfwem.aprsweb;
+
+// Embedded devices. No reflection supported, sry
+option optimize_for = CODE_SIZE;
+
+option go_package = "aprsweb";
+
+
+// A Latitude/Longitude pair
+message LatLng {
+    double latitude = 1; // The latitude in degrees [-90.0, +90.0]
+    double longitude = 2; // The longitude in degrees [-180.0, +180.0]
+}
+
+// An APRS check-in type
+enum CheckinType {
+    POSITION = 0; // A position checkin
+    DIRECTIONFINDING = 1; // A Direction Finding message
+    OBJECT = 2; // An Object
+    WEATHER = 3; // A Weather Report
+    TELEMETRY = 4; // A Telemetry message
+    MESSAGE = 5; //A Message, Bulletin, or Announcement
+    QUERY = 6; // An APRS Query
+    RESPONSE = 7; // An APRS Response to a Query
+    STATUS = 8; // An APRS Status message
+    OTHER = 9; // An "Other" APRS message
+}
+
+// A LocationCheckin is an APRS message containing a Location Checkin
+message LocationCheckin {
+    int64 timestamp = 1; // When populated, the timestamp associated with the location checkin
+    LatLng Location = 2; // The reported location of a checkin
+    bool IsMicE = 3; // Whether or not the message was sent as Mic-E format
+    double speed = 4; // The speed reported
+    string RawGPS = 5; // Raw GPS NMEA sentence
+    string RawWX = 6; // Raw Weather station data
+}
+// An APRS checkin
+message Checkin {
+    int64 received_datetime = 1; // The Unix datetime the Checkin was received, in Microseconds. Not necessarily the report from the transmitting station.
+    CheckinType type = 2; // The APRS checkin type
+    string source = 3; // The source call sign
+    string dest = 4; // The destination type
+    oneof checkin {
+        LocationCheckin LocationCheckin = 5; // A location checkin
+    }
+    string comment = 999; // The comment string transmitted with the Checkin
+}
+
+// Twirp specific stuff below
+
+// A GetCheckinsResponse is a list of Checkins
+message GetCheckinsResponse {
+    repeated Checkin Checkins = 1;
+}
+
+// A GetCheckinsRequest can specify how long to return checkins for
+message GetCheckinsRequest {
+    int64 since = 1; // The Unix datetime, in Microseconds, to return checkins since.
+}
+
+// APRSweb service is the service that returns APRS information
+service APRSWeb {
+    // GetCheckins returns a list of checkins, optionally given a datetime from the start
+    rpc GetCheckins(GetCheckinsRequest) returns (GetCheckinsResponse);
+}
+

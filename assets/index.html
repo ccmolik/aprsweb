@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>APRSWeb</title>
+
+    <link rel="stylesheet" href="/static/assets/leaflet.css" />
+
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="/static/assets/leaflet.js"></script>
+    <script src="/static/assets/leaflet-providers.js"></script>
+    <style type="text/css">
+        #mapid {
+            height: 1000px;
+        }
+
+        body {
+            font-family: Sans-Serif;
+        }
+
+        #packets {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #packets td,
+        #packets th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #packets tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #packets tr:hover {
+            background-color: #ddd;
+        }
+
+        #packets th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .leaflet-div-icon {
+            background: #fff;
+            border: 1px solid #666;
+            opacity: 0.5;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1>APRSWeb</h1>
+    <div id="mapid"></div>
+    <div id="points">
+    </div>
+    <div class="info">
+        <h2>What?</h2>
+        <p>This displays all APRS checkins my RTL-SDR has seen in the past hour.</p>
+        <p>This Golang app talks to Direwolf on a (separate) RasPI to get APRS frames, and uses <a
+                href="https://github.com/twitchtv/twirp">Twirp</a> to serialize those frames into JSON or protobuf (<a
+                href="/static/assets/aprsweb.proto">schema here</a>) objects.</p>
+        <h3>API access</h3>
+        <p>Here's an example call to the API to get checkins in JSON form:</p>
+        <p>
+            <pre>curl -X POST 'http://kd2aoy-pi.local.mesh:5000/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins' -H 'Content-type: Application/JSON' --data '{"since":1579463065997000000}'</pre>
+            <br />
+            "<tt>since</tt>" is the number of unix nanoseconds (since the epoch) specifying the earliest checkin you
+            want to see.</p>
+
+        <p>Source code available at <a href="https://github.com/ccmolik/aprsweb">github</a>
+            <p>Also available on the Internet at <a href="https://aprsweb.svc.ccmo.me">https://aprsweb.svc.ccmo.me</a>
+            </p>
+            <hr />
+
+            <p><button id="poke" onClick="dump()">Click here to dump a list of all checkins I've seen</button></p>
+            <div id="packets"></div>
+</body>
+<script>
+    // https://stackoverflow.com/questions/3426404/create-a-hexadecimal-colour-based-on-a-string-with-javascript
+
+    var stringToColour = function (str) {
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        var colour = '#';
+        for (var i = 0; i < 3; i++) {
+            var value = (hash >> (i * 8)) & 0xFF;
+            colour += ('00' + value.toString(16)).substr(-2);
+        }
+        return colour;
+    }
+
+    function timeout(ms, promise) {
+        return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+                reject(new Error("timeout"))
+            }, ms)
+            promise.then(resolve, reject)
+        })
+    }
+    var onMesh = false;
+
+    var mymap = L.map("mapid").setView([37.756145, -122.432571], 13);
+    var request = {
+        since: (new Date().getTime() - (60 * 60 * 1000)) * 1000 * 1000
+    };
+    // determine if we're on mesh
+    timeout(500, fetch('http://localnode.local.mesh')).then(function (response) {
+        // process response
+        console.log("We appear to be on mesh, changing map url")
+        onMesh = true;
+    }).catch(function (error) {
+        // might be a timeout error
+        console.log("Doesn't seem like we're on mesh, sticking with standard")
+    })
+
+    mymap.crs = L.CRS.Earth;
+    if (onMesh) {
+        var tileLayer = "http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png";
+        var attrib = '&copy; OpenCycleMap, ' + 'Map data via OSM';
+        L.tileLayer(tileLayer, {
+            attribution: attrib,
+        }).addTo(mymap);
+    } else {
+        L.tileLayer.provider("Stadia.OSMBright").addTo(mymap);
+    }
+    // Store a multidimensional list of checkins
+    // checkins[callsign] = [{checkin},{checkin},]
+    let checkins = new Map();
+    let seenIcon = L.divIcon({
+        className: "leaflet-div-icon",
+        iconSize: [5, 5]
+    });
+    
+    // Make TWIRP call to get all the jsons
+    fetch('/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins', {
+            method: "POST",
+            headers: {
+                "Content-Type": "Application/JSON"
+            },
+            body: JSON.stringify(request)
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (myJson) {
+            console.log(myJson);
+            for (let packet of myJson.Checkins) {
+                if (packet.LocationCheckin) {
+                    if (packet.LocationCheckin.Location.latitude != 0 && packet.LocationCheckin.Location.latitude !=
+                        undefined && packet.LocationCheckin.Location.longitude != undefined) {
+                        // We get them back in date order so whatever, fill the map
+                        (checkins.has(packet.source) == false) && (checkins.set(packet.source, []));
+                        // ok js.. what.
+                        checkins.get(packet.source).push(packet);
+                    }
+                }
+            }
+        }).then(function () {
+            checkins.forEach(function (points, value, mp) {
+                let polylinePoints = new Array
+                points.forEach(function (packet, index, a) {
+                    polylinePoints.push([packet.LocationCheckin.Location.latitude, packet
+                        .LocationCheckin.Location
+                        .longitude
+                    ]);
+                    
+                    if (index == a.length - 1) {
+                        L.marker().setLatLng([packet.LocationCheckin.Location.latitude, packet
+                                .LocationCheckin.Location
+                                .longitude
+                            ])
+                            .bindPopup(packet.source + "<br /> Seen at " + new Date(packet
+                                .received_datetime /
+                                1000 / 1000))
+                            .addTo(mymap);
+                    } else {
+                        // This is a non-terminal point, so just use the square
+                        L.marker([packet.LocationCheckin.Location.latitude, packet.LocationCheckin
+                                .Location
+                                .longitude
+                            ], {
+                                icon: seenIcon
+                            })
+                            .bindPopup(packet.source + "<br /> Seen at " + new Date(packet
+                                .received_datetime /
+                                1000 / 1000))
+                            .addTo(mymap);
+                    }
+
+                });
+                if (points.length > 1) {
+                    L.polyline(polylinePoints, {
+                        color: stringToColour(value)
+                    }).addTo(mymap);
+                }
+
+            });
+        });
+
+
+    function dump() {
+        var request = {
+            since: 0
+        };
+        var div = document.getElementById("packets");
+        div.innerHTML = "";
+        var tbl = document.createElement("table");
+        var tblBody = document.createElement("tbody");
+        var row = document.createElement("tr");
+        var cell = document.createElement("th");
+        var cellText = document.createTextNode("Source");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        var cell = document.createElement("th");
+        var cellText = document.createTextNode("Destination");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        var cell = document.createElement("th");
+        var cellText = document.createTextNode("Seen At");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        tblBody.appendChild(row);
+        var cell = document.createElement("th");
+        var cellText = document.createTextNode("Mic-E");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        tblBody.appendChild(row);
+        var cell = document.createElement("th");
+        var cellText = document.createTextNode("Latitude");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        tblBody.appendChild(row);
+        var cell = document.createElement("th");
+        var cellText = document.createTextNode("Longitude");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        tblBody.appendChild(row);
+
+
+
+        fetch('/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "Application/JSON"
+                },
+                body: JSON.stringify(request)
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (myJson) {
+                for (let packet of myJson.Checkins) {
+                    var row = document.createElement("tr");
+                    var cell = document.createElement("td");
+                    var cellText = document.createTextNode(packet.source);
+                    cell.appendChild(cellText);
+                    row.appendChild(cell);
+                    var cell = document.createElement("td");
+                    var cellText = document.createTextNode(packet.dest);
+                    cell.appendChild(cellText);
+                    row.appendChild(cell);
+                    var cell = document.createElement("td");
+                    var cellText = document.createTextNode(new Date(packet.received_datetime / 1000 / 1000));
+                    cell.appendChild(cellText);
+                    row.appendChild(cell);
+                    if (typeof packet.LocationCheckin !== 'undefined') {
+                        if (typeof packet.LocationCheckin.Location.latitude !== 'undefined' && typeof packet
+                            .LocationCheckin.Location.longitude !== 'undefined') {
+                            var cell = document.createElement("td");
+                            var cellText = document.createTextNode(packet.LocationCheckin.IsMicE);
+                            cell.appendChild(cellText);
+                            row.appendChild(cell);
+
+                            var cell = document.createElement("td");
+                            var cellText = document.createTextNode(packet.LocationCheckin.Location.longitude
+                                .toFixed(3));
+                            cell.appendChild(cellText);
+                            row.appendChild(cell);
+                            var cell = document.createElement("td");
+                            var cellText = document.createTextNode(packet.LocationCheckin.Location.latitude.toFixed(
+                                3));
+                            cell.appendChild(cellText);
+                            row.appendChild(cell);
+                        }
+                    }
+
+                    tblBody.appendChild(row);
+                }
+                tbl.appendChild(tblBody);
+                div.appendChild(tbl);
+                tbl.setAttribute("border", "2");
+            });
+    }
+</script>
+
+</html>
