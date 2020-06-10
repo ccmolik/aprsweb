@@ -193,7 +193,7 @@ func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
 		// A-J
 		case 0x41 <= LatByte && LatByte <= 0x4a:
 			latString += strconv.Itoa(int(LatByte - 0x41))
-		// J K or Z = " "
+		// K L or Z = " "
 		case LatByte == 0x4b || LatByte == 0x4c || LatByte == 0x5a:
 			latString += " "
 		// P-Y
@@ -248,7 +248,7 @@ func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
 		}
 	}
 	longtitudeMinutes := (float64)(frame[2]) - 28
-	if longtitudeMinutes > 60 {
+	if longtitudeMinutes >= 60 {
 		longtitudeMinutes -= 60
 	}
 	lngHundredthsOfMinutes := (float64)(frame[3]) - 28
