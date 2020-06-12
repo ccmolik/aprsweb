@@ -12,6 +12,7 @@
     <!-- Make sure you put this AFTER Leaflet's CSS -->
     <script src="/static/assets/leaflet.js"></script>
     <script src="/static/assets/leaflet-providers.js"></script>
+    <script src="/static/assets/jquery-3.5.1.min.js"></script>
     <style type="text/css">
         #mapid {
             height: 1000px;
@@ -63,6 +64,11 @@
     <div id="mapid"></div>
     <div id="points">
     </div>
+    <div id="selector">
+        <p>View checkins in last:
+            
+        </p>
+    </div>
     <div class="info">
         <h2>What?</h2>
         <p>This displays all APRS checkins my RTL-SDR has seen in the past hour.</p>
@@ -112,6 +118,7 @@
     var onMesh = false;
 
     var mymap = L.map("mapid").setView([37.756145, -122.432571], 13);
+    var pointsLayer = L.layerGroup().addTo(mymap);
     var request = {
         since: (new Date().getTime() - (60 * 60 * 1000)) * 1000 * 1000
     };
@@ -135,16 +142,56 @@
     } else {
         L.tileLayer.provider("Stadia.OSMBright").addTo(mymap);
     }
-    // Store a multidimensional list of checkins
     // checkins[callsign] = [{checkin},{checkin},]
     let checkins = new Map();
     let seenIcon = L.divIcon({
         className: "leaflet-div-icon",
         iconSize: [5, 5]
     });
-    
-    // Make TWIRP call to get all the jsons
-    fetch('/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins', {
+    // Dropdown in upper-right
+    var legend = L.control({position: 'topright'});
+    legend.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'info legend');
+    div.innerHTML = `<select id="targetTime">
+                <option value="15">15 Minutes</option>
+                <option value="30">30 Minutes</option>
+                <option value="60" selected="selected">1 Hour</option>
+                <option value="240">4 Hours</option>
+                <option value="720">12 Hours</option>
+                <option value="1440">1 Day</option>
+                <option value="4320">3 Days</option>
+                <option value="525600">1 Year</option>
+            </select>`;
+    div.firstChild.onmousedown = div.firstChild.ondblclick = L.DomEvent.stopPropagation;
+    return div;
+    };
+    legend.addTo(mymap);
+
+    // Initial point load
+    fetchAndPopulatePoints($("#targetTime").children("option:selected").val());
+
+    // jquery handler for dropdown
+    $("#targetTime").change(function() {
+        clearMap()
+        fetchAndPopulatePoints($("#targetTime").children("option:selected").val());
+    });
+    function clearMap() {
+        // TODO make this more smart and only clear points older than the requested time
+        pointsLayer.clearLayers();
+        checkins.clear();
+    }
+
+    function fetchAndPopulatePoints(deltaMinutes) {
+        /**
+         * deltaMinutes is in minutes from the current time
+         * so can we subtract that from the current time
+         **/
+        var request = {
+            // the twirp api needs unix nanoseconds
+            since: (new Date().getTime() - (deltaMinutes * 60 * 1000)) * 1000 * 1000
+        };
+        // Make twirp call to get all the jsons
+        fetch('/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins', {
             method: "POST",
             headers: {
                 "Content-Type": "Application/JSON"
@@ -155,14 +202,12 @@
             return response.json();
         })
         .then(function (myJson) {
-            console.log(myJson);
             for (let packet of myJson.Checkins) {
                 if (packet.LocationCheckin) {
                     if (packet.LocationCheckin.Location.latitude != 0 && packet.LocationCheckin.Location.latitude !=
                         undefined && packet.LocationCheckin.Location.longitude != undefined) {
                         // We get them back in date order so whatever, fill the map
                         (checkins.has(packet.source) == false) && (checkins.set(packet.source, []));
-                        // ok js.. what.
                         checkins.get(packet.source).push(packet);
                     }
                 }
@@ -184,7 +229,7 @@
                             .bindPopup(packet.source + "<br /> Seen at " + new Date(packet
                                 .received_datetime /
                                 1000 / 1000))
-                            .addTo(mymap);
+                            .addTo(pointsLayer);
                     } else {
                         // This is a non-terminal point, so just use the square
                         L.marker([packet.LocationCheckin.Location.latitude, packet.LocationCheckin
@@ -196,20 +241,19 @@
                             .bindPopup(packet.source + "<br /> Seen at " + new Date(packet
                                 .received_datetime /
                                 1000 / 1000))
-                            .addTo(mymap);
+                            .addTo(pointsLayer);
                     }
 
                 });
                 if (points.length > 1) {
                     L.polyline(polylinePoints, {
                         color: stringToColour(value)
-                    }).addTo(mymap);
+                    }).addTo(pointsLayer);
                 }
 
             });
         });
-
-
+    }
     function dump() {
         var request = {
             since: 0
@@ -261,7 +305,7 @@
                 return response.json();
             })
             .then(function (myJson) {
-                for (let packet of myJson.Checkins) {
+                    for (let packet of myJson.Checkins) {
                     var row = document.createElement("tr");
                     var cell = document.createElement("td");
                     var cellText = document.createTextNode(packet.source);

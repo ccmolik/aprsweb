@@ -109,3 +109,4 @@ tags
 /aprsweb
 /aprsweb-native
 bindata.go
+aprsweb.yml
