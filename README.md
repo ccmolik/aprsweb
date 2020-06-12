@@ -6,10 +6,12 @@ browser.  ![aprsweb screenshot](aprsweb.png?raw=true "APRSWeb")
 
 Unlike other APRS software, APRSWeb's target is to render into a web
 browser. You can think of APRSWeb as a self-hosted version of
-<https://aprs.fi>, except it can run on hardware as modest as a Raspberry Pi.
+<https://aprs.fi>, except it can run on hardware as modest as a
+Raspberry Pi.
 
-It uses Twirp to serialize those frames into JSON or protobuf objects,
-so it also doubles as an HTTP API for your APRS frames.
+It uses [Twirp](https://github.com/twitchtv/twirp) to serialize those
+frames into JSON or protobuf objects, so it also doubles as an HTTP
+API for your APRS frames.
 
 ## Building
 You'll need `git`, `golang` `protoc-gen-twirp`, and `protoc` per the
