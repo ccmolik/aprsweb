@@ -8,6 +8,7 @@
     <title>APRSWeb</title>
 
     <link rel="stylesheet" href="/static/assets/leaflet.css" />
+    <link rel="stylesheet" href="/static/assets/sprites.css" />
 
     <!-- Make sure you put this AFTER Leaflet's CSS -->
     <script src="/static/assets/leaflet.js"></script>
@@ -82,9 +83,10 @@
             <p>Also available on the Internet at <a href="https://aprsweb.svc.ccmo.me">https://aprsweb.svc.ccmo.me</a>
             </p>
             <hr />
-
             <p><button id="poke" onClick="dump()">Click here to dump a list of all checkins I've seen</button></p>
             <div id="packets"></div>
+            <p>Map icons via <a href="https://github.com/hessu/aprs-symbols/">https://github.com/hessu/aprs-symbols/</a></p>
+
 </body>
 <script>
     // https://stackoverflow.com/questions/3426404/create-a-hexadecimal-colour-based-on-a-string-with-javascript
@@ -143,11 +145,16 @@
         className: "leaflet-div-icon",
         iconSize: [5, 5]
     });
+
+
+    // icons[table][symbol] = className
     // Dropdown in upper-right
-    var legend = L.control({position: 'topright'});
+    var legend = L.control({
+        position: 'topright'
+    });
     legend.onAdd = function (map) {
-    var div = L.DomUtil.create('div', 'info legend');
-    div.innerHTML = `<select id="targetTime">
+        var div = L.DomUtil.create('div', 'info legend');
+        div.innerHTML = `<select id="targetTime">
                 <option value="15">15 Minutes</option>
                 <option value="30">30 Minutes</option>
                 <option value="60" selected="selected">1 Hour</option>
@@ -157,8 +164,8 @@
                 <option value="4320">3 Days</option>
                 <option value="525600">1 Year</option>
             </select>`;
-    div.firstChild.onmousedown = div.firstChild.ondblclick = L.DomEvent.stopPropagation;
-    return div;
+        div.firstChild.onmousedown = div.firstChild.ondblclick = L.DomEvent.stopPropagation;
+        return div;
     };
     legend.addTo(mymap);
 
@@ -166,10 +173,11 @@
     fetchAndPopulatePoints($("#targetTime").children("option:selected").val());
 
     // jquery handler for dropdown
-    $("#targetTime").change(function() {
+    $("#targetTime").change(function () {
         clearMap()
         fetchAndPopulatePoints($("#targetTime").children("option:selected").val());
     });
+
     function clearMap() {
         // TODO make this more smart and only clear points older than the requested time
         pointsLayer.clearLayers();
@@ -187,68 +195,76 @@
         };
         // Make twirp call to get all the jsons
         fetch('/twirp/aprsweb.APRSWeb/GetCheckins', {
-            method: "POST",
-            headers: {
-                "Content-Type": "Application/JSON"
-            },
-            body: JSON.stringify(request)
-        })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (myJson) {
-            for (let packet of myJson.Checkins) {
-                if (packet.LocationCheckin) {
-                    if (packet.LocationCheckin.Location.latitude != 0 && packet.LocationCheckin.Location.latitude !=
-                        undefined && packet.LocationCheckin.Location.longitude != undefined) {
-                        // We get them back in date order so whatever, fill the map
-                        (checkins.has(packet.source) == false) && (checkins.set(packet.source, []));
-                        checkins.get(packet.source).push(packet);
+                method: "POST",
+                headers: {
+                    "Content-Type": "Application/JSON"
+                },
+                body: JSON.stringify(request)
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (myJson) {
+                for (let packet of myJson.Checkins) {
+                    if (packet.LocationCheckin) {
+                        if (packet.LocationCheckin.Location.latitude != 0 && packet.LocationCheckin.Location
+                            .latitude !=
+                            undefined && packet.LocationCheckin.Location.longitude != undefined) {
+                            // We get them back in date order so whatever, fill the map
+                            (checkins.has(packet.source) == false) && (checkins.set(packet.source, []));
+                            checkins.get(packet.source).push(packet);
+                        }
                     }
                 }
-            }
-        }).then(function () {
-            checkins.forEach(function (points, value, mp) {
-                let polylinePoints = new Array
-                points.forEach(function (packet, index, a) {
-                    polylinePoints.push([packet.LocationCheckin.Location.latitude, packet
-                        .LocationCheckin.Location
-                        .longitude
-                    ]);
-                    
-                    if (index == a.length - 1) {
-                        L.marker().setLatLng([packet.LocationCheckin.Location.latitude, packet
-                                .LocationCheckin.Location
-                                .longitude
-                            ])
-                            .bindPopup(`${packet.source} (${packet.symbolDescription})<br /> Seen at` + new Date(packet
-                                .received_datetime /
-                                1000 / 1000))
-                            .addTo(pointsLayer);
-                    } else {
-                        // This is a non-terminal point, so just use the square
-                        L.marker([packet.LocationCheckin.Location.latitude, packet.LocationCheckin
-                                .Location
-                                .longitude
-                            ], {
-                                icon: seenIcon
-                            })
-                            .bindPopup(`${packet.source} (${packet.symbolDescription})<br /> Seen at` + new Date(packet
-                                .received_datetime /
-                                1000 / 1000)) 
-                            .addTo(pointsLayer);
+            }).then(function () {
+                checkins.forEach(function (points, value, mp) {
+                    let polylinePoints = new Array
+                    points.forEach(function (packet, index, a) {
+                        polylinePoints.push([packet.LocationCheckin.Location.latitude, packet
+                            .LocationCheckin.Location
+                            .longitude
+                        ]);
+
+                        if (index == a.length - 1) {
+                            L.marker([packet.LocationCheckin.Location.latitude, packet
+                                    .LocationCheckin.Location.longitude
+                                ], {
+                                    icon: symLookup(packet.symbolTable + packet.mapSymbol)
+                                })
+                                .bindPopup(
+                                    `${packet.source} (${packet.symbolDescription})<br /> Seen at` +
+                                    new Date(packet
+                                        .received_datetime /
+                                        1000 / 1000))
+                                .addTo(pointsLayer);
+                        } else {
+                            // This is a non-terminal point, so just use the square
+                            L.marker([packet.LocationCheckin.Location.latitude, packet
+                                    .LocationCheckin
+                                    .Location
+                                    .longitude
+                                ], {
+                                    icon: seenIcon
+                                })
+                                .bindPopup(
+                                    `${packet.source} (${packet.symbolDescription})<br /> Seen at` +
+                                    new Date(packet
+                                        .received_datetime /
+                                        1000 / 1000))
+                                .addTo(pointsLayer);
+                        }
+
+                    });
+                    if (points.length > 1) {
+                        L.polyline(polylinePoints, {
+                            color: stringToColour(value)
+                        }).addTo(pointsLayer);
                     }
 
                 });
-                if (points.length > 1) {
-                    L.polyline(polylinePoints, {
-                        color: stringToColour(value)
-                    }).addTo(pointsLayer);
-                }
-
             });
-        });
     }
+
     function dump() {
         var request = {
             since: 0
@@ -300,7 +316,7 @@
                 return response.json();
             })
             .then(function (myJson) {
-                    for (let packet of myJson.Checkins) {
+                for (let packet of myJson.Checkins) {
                     var row = document.createElement("tr");
                     var cell = document.createElement("td");
                     var cellText = document.createTextNode(packet.source);
@@ -341,6 +357,41 @@
                 div.appendChild(tbl);
                 tbl.setAttribute("border", "2");
             });
+    }
+
+    function symLookup(str) {
+        console.log(`Got ${str}`);
+        const iconSize = [24, 24];
+        symTable = {
+            "/!": L.divIcon({
+                className: "cop",
+                iconSize: iconSize
+            }),
+            '/"': L.divIcon({
+                className: "generic-sprite",
+                iconSize: iconSize
+            }, ),
+            '/>': L.divIcon({
+                className: "car-sprite",
+                iconSize: iconSize
+            }, ),
+            '/W': L.divIcon({
+                className: "wx-sprite",
+                iconSize: iconSize
+            }, ),
+            '/_': L.divIcon({
+                className: "wx-sprite",
+                iconSize: iconSize
+            }, ),
+            '/-': L.divIcon({
+                className: "house-sprite",
+                iconSize: iconSize
+            }, )
+        };
+        return symTable[str] ||  L.divIcon({
+                className: "generic-sprite",
+                iconSize: iconSize
+            }, )
     }
 </script>
 

@@ -1,0 +1,33 @@
+.cop {
+  width: 24px;
+  height: 24px;
+  background: url('aprs-symbols-24-0.png') 0 0;
+}
+
+.generic-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -24px 0px;
+}
+
+.car-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -312px -24px;
+}
+
+.wx-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -336px -72px;
+}
+
+.house-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -288px 0px;
+}
