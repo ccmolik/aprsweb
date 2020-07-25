@@ -64,11 +64,6 @@
     <div id="mapid"></div>
     <div id="points">
     </div>
-    <div id="selector">
-        <p>View checkins in last:
-            
-        </p>
-    </div>
     <div class="info">
         <h2>What?</h2>
         <p>This displays all APRS checkins my RTL-SDR has seen in the past hour.</p>
@@ -78,7 +73,7 @@
         <h3>API access</h3>
         <p>Here's an example call to the API to get checkins in JSON form:</p>
         <p>
-            <pre>curl -X POST 'http://kd2aoy-pi.local.mesh:5000/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins' -H 'Content-type: Application/JSON' --data '{"since":1579463065997000000}'</pre>
+            <pre>curl -X POST 'http://kd2aoy-pi.local.mesh:5000/twirp/aprsweb.APRSWeb/GetCheckins' -H 'Content-type: Application/JSON' --data '{"since":1579463065997000000}'</pre>
             <br />
             "<tt>since</tt>" is the number of unix nanoseconds (since the epoch) specifying the earliest checkin you
             want to see.</p>
@@ -191,7 +186,7 @@
             since: (new Date().getTime() - (deltaMinutes * 60 * 1000)) * 1000 * 1000
         };
         // Make twirp call to get all the jsons
-        fetch('/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins', {
+        fetch('/twirp/aprsweb.APRSWeb/GetCheckins', {
             method: "POST",
             headers: {
                 "Content-Type": "Application/JSON"
@@ -226,7 +221,7 @@
                                 .LocationCheckin.Location
                                 .longitude
                             ])
-                            .bindPopup(packet.source + "<br /> Seen at " + new Date(packet
+                            .bindPopup(`${packet.source} (${packet.symbolDescription})<br /> Seen at` + new Date(packet
                                 .received_datetime /
                                 1000 / 1000))
                             .addTo(pointsLayer);
@@ -238,9 +233,9 @@
                             ], {
                                 icon: seenIcon
                             })
-                            .bindPopup(packet.source + "<br /> Seen at " + new Date(packet
+                            .bindPopup(`${packet.source} (${packet.symbolDescription})<br /> Seen at` + new Date(packet
                                 .received_datetime /
-                                1000 / 1000))
+                                1000 / 1000)) 
                             .addTo(pointsLayer);
                     }
 
@@ -294,7 +289,7 @@
 
 
 
-        fetch('/twirp/net.sfwem.aprsweb.APRSWeb/GetCheckins', {
+        fetch('/twirp/aprsweb.APRSWeb/GetCheckins', {
                 method: "POST",
                 headers: {
                     "Content-Type": "Application/JSON"

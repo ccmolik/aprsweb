@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -32,7 +33,17 @@ const rawMode = "\x00" +
 	"\x00\x00\x00\x00"
 
 // ReadPackets reads packets from the AGWPE packet emitter and encodes them to be served by the web server
-func (p PacketHandler) ReadPackets() {
+func (p PacketHandler) ReadPackets(jsonDtor *[]byte) {
+	// unmarshal symbol descriptor
+	symbolTable := SymbolTable{}
+	err := json.Unmarshal(*jsonDtor, &symbolTable)
+	if err != nil {
+		panic("Couldn't unmarhsal JSON descriptor: " + err.Error())
+	}
+	if symbolTable.Symbols == nil || symbolTable.Symbols["/_"].Description != "Weather station" {
+		panic("Error sanity-checking symbol table")
+	}
+
 	debug := false
 	if os.Getenv("DEBUG") != "" {
 		debug = true
@@ -76,13 +87,18 @@ func (p PacketHandler) ReadPackets() {
 			if debug {
 				l.RawPacket = base64.StdEncoding.EncodeToString(buf[:len-1])
 				fmt.Printf("AGWPE Packet: %+v\n", l)
+				fmt.Printf("AGWPE Packet Data: %s", hex.Dump(l.Data))
 			}
 			checkin, err := packet.ParseAX25Frame(l.Data)
 			if err != nil {
 				log.Printf("[packethandler] Failed to parse this packet: %s %s\n", hex.Dump(buf), err)
 				continue
 			}
-
+			if sym, ok := symbolTable.Symbols[checkin.SymbolTable+checkin.MapSymbol]; ok {
+				checkin.SymbolDescription = sym.Description
+			} else {
+				checkin.SymbolDescription = "Unsure, got " + checkin.SymbolTable + checkin.MapSymbol
+			}
 			// fmt.Printf("AGWPE Packet Data: %s\n", hex.Dump(buf[:len]))
 			// fmt.Printf("AX25 Data: %s\n", hex.Dump(l.Data))
 			// fmt.Printf("AX25 Frame: %+v\n", frame)
@@ -95,4 +111,12 @@ func (p PacketHandler) ReadPackets() {
 			// log.Printf("[packethandler] Sent packet to channel FROM %s\n", l.CallFrom)
 		}
 	}
+}
+
+type SymbolTable struct {
+	Symbols map[string]Descriptor
+}
+type Descriptor struct {
+	Tocall      string
+	Description string
 }

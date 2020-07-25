@@ -12,6 +12,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// An AGWPEPacket contains low-level data about a packet.
 type AGWPEPacket struct {
 	AGWPEPort byte   // Port where the data frame had been received thru {0=Port1,1=Port2,…}
 	DataKind  byte   // The kind of data
@@ -23,6 +24,8 @@ type AGWPEPacket struct {
 	RawPacket string // The actual packet itself in base64
 }
 
+// AGWPEPacketFromB64 turns a base64 string into an AGWPE Packet.
+// Useful for debugging / tests.
 func AGWPEPacketFromB64(b64 string) (*AGWPEPacket, error) {
 	// Base64 decode the poor thing
 	buf, err := base64.StdEncoding.DecodeString(b64)
@@ -42,7 +45,7 @@ func AGWPEPacketFromB64(b64 string) (*AGWPEPacket, error) {
 	return &l, nil
 }
 
-// LatLng represents Latitude and Longitudes
+// LatLng represents Latitude and Longitude
 type LatLng struct {
 	Latitude  decimal.Decimal
 	Longitude decimal.Decimal
@@ -74,10 +77,7 @@ func ParseAX25Frame(inputBytes []byte) (*pb.Checkin, error) {
 
 	APRSData, err := getAPRSData(inputBytes)
 	if len(APRSData) == 0 {
-		err = errors.New("Got a zero-length packet back from getAPRSData.. this happens I guess")
-	}
-	if err != nil {
-		return &retCheckin, err
+		return &retCheckin, errors.New("Got a zero-length packet back from getAPRSData.. this happens I guess")
 	}
 	// Determine if we have MIC-E madness
 	switch APRSData[0] {
@@ -104,10 +104,13 @@ func ParseAX25Frame(inputBytes []byte) (*pb.Checkin, error) {
 				Latitude:  locLat,
 				Longitude: locLng,
 			}
+			// yes, these are reversed
+			// this is why i drink
+			retCheckin.MapSymbol = string([]byte{APRSData[7]})
+			retCheckin.SymbolTable = string([]byte{APRSData[8]})
+
 		}
 		if APRSData[0] == 0x2f || APRSData[0] == 0x40 || APRSData[0] == 0x3d || APRSData[0] == 0x21 {
-			// Non-mice debug
-
 			checkinMsg.IsMicE = false
 			locPayloadStart := 0
 			found := false
@@ -132,6 +135,9 @@ func ParseAX25Frame(inputBytes []byte) (*pb.Checkin, error) {
 			}
 			// We have an offset for the actual loc data now
 			lat, lng := LocationDataToLatLng(APRSData[locPayloadStart+1:])
+			// Set the table selector and symbol (fixed offset)
+			retCheckin.SymbolTable = string([]byte{APRSData[locPayloadStart+9]})
+			retCheckin.MapSymbol = string([]byte{APRSData[locPayloadStart+19]})
 			// TODO this ignores precision exactness in float conversion
 			locLat, _ := lat.Float64()
 			locLng, _ := lng.Float64()
@@ -177,9 +183,6 @@ func parseAX25Callsign(bytes []byte) (string, error) {
 }
 
 func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
-	// This doesn't work:
-	// KK6MRI-11>APLIGA,N6ZX-3,WIDE1,BKELEY,WIDE2*:/214941h3746.05N/12210.88WO172/011/A=002095 007TxC  12.80C  932.13hPa  4.97V 08S https://tinyurl.com/rahnomj Neta-Li & Maneli
-
 	latString := ""
 	isLngOffset := false
 	isLngWest := false

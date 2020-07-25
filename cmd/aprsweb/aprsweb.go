@@ -63,10 +63,15 @@ func main() {
 		Server:          agwpeServer,
 		Port:            int32(agwpePort),
 	}
+	// Load the JSON blob of symbols into memory or panic
+	jsonDescriptor, err := bindata.Asset("assets/symbols.dense.json")
+	if err != nil {
+		panic("Couldn't load symbols.dense.json from assets dir, not continuing: " + err.Error())
+	}
 	// Start Packet handler goroutine
 	go func() {
 		log.Println("Starting packet handler goroutine")
-		packetHandler.ReadPackets()
+		packetHandler.ReadPackets(&jsonDescriptor)
 	}()
 
 	// Start Packet Store goroutine
@@ -91,6 +96,6 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(bindata.AssetFile())))
 	// // mux.Handle("/list", h.DumpList(&receivedFrames))
 	mux.Handle("/", serveIndex())
-	err := http.ListenAndServe(webListenAddr, RequestLogger(mux))
+	err = http.ListenAndServe(webListenAddr, RequestLogger(mux))
 	log.Fatal(err)
 }

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package net.sfwem.aprsweb;
+package aprsweb;
 
 // Embedded devices. No reflection supported, sry
 option optimize_for = CODE_SIZE;
@@ -46,6 +46,9 @@ message Checkin {
     oneof checkin {
         LocationCheckin LocationCheckin = 5; // A location checkin
     }
+    string symbolTable = 6; // The symbol table (primary / secondary / overlay)
+    string mapSymbol = 7; // The map symbol (e.g. '[')
+    string symbolDescription = 8; // The human-readable symbol description
     string comment = 999; // The comment string transmitted with the Checkin
 }
 
@@ -66,4 +69,3 @@ service APRSWeb {
     // GetCheckins returns a list of checkins, optionally given a datetime from the start
     rpc GetCheckins(GetCheckinsRequest) returns (GetCheckinsResponse);
 }
-

@@ -1,6 +1,8 @@
 package packet
 
 import (
+	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,4 +65,49 @@ func TestTimeStampLocation(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(checkin)
 
+}
+
+// Jul 03 09:08:49 kd2aoy-pi sh[16151]: MIC-E, Truck (18 wheeler), Kenwood TM-D710, En Route
+// Jul 03 09:08:49 kd2aoy-pi sh[16151]: N 38 16.2900, W 121 59.2800, 14 MPH, course 216, alt 56 ft
+// Jul 03 09:08:55 kd2aoy-pi sh[16151]: Digipeater WIDE2 (probably BKELEY) audio level = 74(15/20)   [NONE]   |||||____
+// Jul 03 09:08:55 kd2aoy-pi sh[16151]: [0.2] N7NJO-14>SX1VRW,W6CX-3,BKELEY,WIDE2*:`1W8m]mu/]"4&}146.520MHz Toff Tacoma to the Bay and =<0x0d>
+func TestMicEComment(t *testing.T) {
+	assert := assert.New(t)
+	p, err := AGWPEPacketFromB64("AAAAAEsAAABON05KTy0xNAAAU1gxVlJXAAAAAFwAAAAAAAAAAKawYqykrmCcbpyUnkD8rmyGsEBA5oSWipiKsuCukoiKZEDhA/BgMVc4bV1tdS9dIjQmfTE0Ni41MjBNSHogVG9mZiBUYWNvbWEgdG8gdGhlIEJheSBhbmQgPQ==")
+	assert.NoError(err)
+	assert.NotNil(p)
+	fmt.Printf("%+v\n", p)
+	fmt.Printf("%v\n", hex.Dump(p.Data))
+}
+
+func TestSymbol(t *testing.T) {
+	assert := assert.New(t)
+	p, err := AGWPEPacketFromB64("AAAAAEsAAABLRzZVV04tMQAAQVBNSTA2AAAAAIMAAAAAAAAAAIKgmpJgbGCWjmyqrpxiroJsqJ6u5ISWipiKsuCukoiKZEDhA/BAMjUxNzAwejM3MTkuMjBOLzEyMjE1LjgwV18wMTIvMDAxZzAwM3QwNThyMDAwcDAwMFAwMDBoOTZiMTAxMjBMYSBIb25kYSwgQ0EgVVNBICB3ZWF0aGVyIGluZg==")
+	assert.NoError(err)
+	assert.NotNil(p)
+	chkin, err := ParseAX25Frame(p.Data)
+	assert.NoError(err)
+	assert.NotNil(chkin)
+	assert.Equal(chkin.MapSymbol, "_")
+	assert.Equal(chkin.SymbolTable, "/") // a wx station
+
+}
+
+//AGWPE Packet: {AGWPEPort:0 DataKind:75 PID:0 CallFrom:KI6TDB CallTo:S7SSUY DatLen:74 Data:[166 110 166 166 170 178 96 150 146 108 168 136 132 96 174 130 108 168 158 174 228 174 146 136 138 98 64 224 132 150 138 152 138 178 224 174 146 136 138 100 64 225 3 240 96 50 46 101 108 32 28 62 47 39 34 51 115 125 124 42 74 37 92 40 39 124 33 119 108 117 33 124] RawPacket:AAAAAEsAAABLSTZUREIAAAAAUzdTU1VZAAAAAEoAAAAAAAAAAKZupqaqsmCWkmyoiIRgroJsqJ6u5K6SiIpiQOCEloqYirLgrpKIimRA4QPwYDIuZWwgHD4vJyIzc318KkolXCgnfCF3bHUhfA==}
+// AGWPE Packet Data: 00000000  a6 6e a6 a6 aa b2 60 96  92 6c a8 88 84 60 ae 82  |.n....`..l...`..|
+// 00000010  6c a8 9e ae e4 ae 92 88  8a 62 40 e0 84 96 8a 98  |l........b@.....|
+// 00000020  8a b2 e0 ae 92 88 8a 64  40 e1 03 f0 60 32 2e 65  |.......d@...`2.e|
+// 00000030  6c 20 1c 3e 2f 27 22 33  73 7d 7c 2a 4a 25 5c 28  |l .>/'"3s}|*J%\(|
+// 00000040  27 7c 21 77 6c 75 21 7c                           |'|!wlu!||
+func TestMicESymbol(t *testing.T) {
+	assert := assert.New(t)
+	p, err := AGWPEPacketFromB64("AAAAAEsAAABLSTZUREIAAAAAUzdTU1VZAAAAAEoAAAAAAAAAAKZupqaqsmCWkmyoiIRgroJsqJ6u5K6SiIpiQOCEloqYirLgrpKIimRA4QPwYDIuZWwgHD4vJyIzc318KkolXCgnfCF3bHUhfA==")
+	assert.NoError(err)
+	assert.NotNil(p)
+	chkin, err := ParseAX25Frame(p.Data)
+	assert.NoError(err)
+	assert.NotNil(chkin)
+	fmt.Println(chkin.Source)
+	assert.Equal(chkin.MapSymbol, ">")
+	assert.Equal(chkin.SymbolTable, "/") // a car
 }
