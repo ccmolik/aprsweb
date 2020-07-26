@@ -85,7 +85,8 @@
             <hr />
             <p><button id="poke" onClick="dump()">Click here to dump a list of all checkins I've seen</button></p>
             <div id="packets"></div>
-            <p>Map icons via <a href="https://github.com/hessu/aprs-symbols/">https://github.com/hessu/aprs-symbols/</a></p>
+            <p>Map icons via <a href="https://github.com/hessu/aprs-symbols/">https://github.com/hessu/aprs-symbols/</a>
+            </p>
 
 </body>
 <script>
@@ -115,7 +116,7 @@
     var onMesh = false;
 
     // load saved view if it exists
-    let savedView = JSON.parse(window.localStorage['view']);
+    let savedView = JSON.parse(window.localStorage['view'] || "false");
     if (savedView) {
         var mymap = L.map("mapid").setView([savedView.lat, savedView.lng], savedView.zoom);
     } else {
@@ -189,14 +190,15 @@
     }
 
     // handler for map moving saving the zoom
-    mymap.on('moveend', function(e) {
+    mymap.on('moveend', function (e) {
         let view = {
-                        lat: mymap.getCenter().lat,
-                        lng: mymap.getCenter().lng,
-                        zoom: mymap.getZoom()
-                    };
+            lat: mymap.getCenter().lat,
+            lng: mymap.getCenter().lng,
+            zoom: mymap.getZoom()
+        };
         window.localStorage['view'] = JSON.stringify(view);
     })
+
     function fetchAndPopulatePoints(deltaMinutes) {
         /**
          * deltaMinutes is in minutes from the current time
@@ -422,10 +424,10 @@
 
 
         };
-        return symTable[str] ||  L.divIcon({
-                className: "generic-sprite",
-                iconSize: iconSize
-            }, )
+        return symTable[str] || L.divIcon({
+            className: "generic-sprite",
+            iconSize: iconSize
+        }, )
     }
 </script>
 
