@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -76,8 +74,6 @@ func TestMicEComment(t *testing.T) {
 	p, err := AGWPEPacketFromB64("AAAAAEsAAABON05KTy0xNAAAU1gxVlJXAAAAAFwAAAAAAAAAAKawYqykrmCcbpyUnkD8rmyGsEBA5oSWipiKsuCukoiKZEDhA/BgMVc4bV1tdS9dIjQmfTE0Ni41MjBNSHogVG9mZiBUYWNvbWEgdG8gdGhlIEJheSBhbmQgPQ==")
 	assert.NoError(err)
 	assert.NotNil(p)
-	fmt.Printf("%+v\n", p)
-	fmt.Printf("%v\n", hex.Dump(p.Data))
 }
 
 func TestSymbol(t *testing.T) {
@@ -107,7 +103,6 @@ func TestMicESymbol(t *testing.T) {
 	chkin, err := ParseAX25Frame(p.Data)
 	assert.NoError(err)
 	assert.NotNil(chkin)
-	fmt.Println(chkin.Source)
 	assert.Equal(chkin.MapSymbol, ">")
 	assert.Equal(chkin.SymbolTable, "/") // a car
 }

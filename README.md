@@ -67,6 +67,5 @@ includes all of the js/html assets.
 * Provide a filter for:
     * Displaying a specific station's checkins only
 * Automatically refresh the map every minute or so
-* Remember map position in local storage so you don't get stuck in SF
-* Use specific icons for different station checkins
+* ~Use specific icons for different station checkins~ (In progress)
 * Write better docs :)

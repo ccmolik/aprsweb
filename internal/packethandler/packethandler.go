@@ -97,7 +97,7 @@ func (p PacketHandler) ReadPackets(jsonDtor *[]byte) {
 			if sym, ok := symbolTable.Symbols[checkin.SymbolTable+checkin.MapSymbol]; ok {
 				checkin.SymbolDescription = sym.Description
 			} else {
-				checkin.SymbolDescription = "Unsure, got " + checkin.SymbolTable + checkin.MapSymbol
+				checkin.SymbolDescription = fmt.Sprintf("Unknown, raw symbol %s", checkin.SymbolTable+checkin.MapSymbol)
 			}
 			// fmt.Printf("AGWPE Packet Data: %s\n", hex.Dump(buf[:len]))
 			// fmt.Printf("AX25 Data: %s\n", hex.Dump(l.Data))

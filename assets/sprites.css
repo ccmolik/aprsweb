@@ -31,3 +31,27 @@
   background: url(aprs-symbols-24-0.png);
   background-position: -288px 0px;
 }
+.human-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -240px -72px;
+}
+.van-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -120px -120px;
+}
+.truck-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -240px -96px;
+}
+.large-plane-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -312px -72px;
+}

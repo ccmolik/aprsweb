@@ -114,7 +114,13 @@
     }
     var onMesh = false;
 
-    var mymap = L.map("mapid").setView([37.756145, -122.432571], 13);
+    // load saved view if it exists
+    let savedView = JSON.parse(window.localStorage['view']);
+    if (savedView) {
+        var mymap = L.map("mapid").setView([savedView.lat, savedView.lng], savedView.zoom);
+    } else {
+        var mymap = L.map("mapid").setView([37.756145, -122.432571], 13);
+    }
     var pointsLayer = L.layerGroup().addTo(mymap);
     var request = {
         since: (new Date().getTime() - (60 * 60 * 1000)) * 1000 * 1000
@@ -146,8 +152,6 @@
         iconSize: [5, 5]
     });
 
-
-    // icons[table][symbol] = className
     // Dropdown in upper-right
     var legend = L.control({
         position: 'topright'
@@ -184,6 +188,15 @@
         checkins.clear();
     }
 
+    // handler for map moving saving the zoom
+    mymap.on('moveend', function(e) {
+        let view = {
+                        lat: mymap.getCenter().lat,
+                        lng: mymap.getCenter().lng,
+                        zoom: mymap.getZoom()
+                    };
+        window.localStorage['view'] = JSON.stringify(view);
+    })
     function fetchAndPopulatePoints(deltaMinutes) {
         /**
          * deltaMinutes is in minutes from the current time
@@ -232,7 +245,7 @@
                                     icon: symLookup(packet.symbolTable + packet.mapSymbol)
                                 })
                                 .bindPopup(
-                                    `${packet.source} (${packet.symbolDescription})<br /> Seen at` +
+                                    `${packet.source} (${packet.symbolDescription})<br /> Seen at ` +
                                     new Date(packet
                                         .received_datetime /
                                         1000 / 1000))
@@ -247,7 +260,7 @@
                                     icon: seenIcon
                                 })
                                 .bindPopup(
-                                    `${packet.source} (${packet.symbolDescription})<br /> Seen at` +
+                                    `${packet.source} (${packet.symbolDescription})<br /> Seen at ` +
                                     new Date(packet
                                         .received_datetime /
                                         1000 / 1000))
@@ -360,7 +373,6 @@
     }
 
     function symLookup(str) {
-        console.log(`Got ${str}`);
         const iconSize = [24, 24];
         symTable = {
             "/!": L.divIcon({
@@ -386,7 +398,29 @@
             '/-': L.divIcon({
                 className: "house-sprite",
                 iconSize: iconSize
-            }, )
+            }, ),
+            "/[": L.divIcon({
+                className: "human-sprite",
+                iconSize: iconSize
+            }, ),
+            "/v": L.divIcon({
+                className: "van-sprite",
+                iconSize: iconSize
+            }, ),
+            "\\v": L.divIcon({
+                className: "van-sprite",
+                iconSize: iconSize
+            }, ),
+            "/k": L.divIcon({
+                className: "truck-sprite",
+                iconSize: iconSize
+            }, ),
+            "/^": L.divIcon({
+                className: "large-plane-sprite",
+                iconSize: iconSize
+            }, ),
+
+
         };
         return symTable[str] ||  L.divIcon({
                 className: "generic-sprite",
