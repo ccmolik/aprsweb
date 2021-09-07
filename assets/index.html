@@ -61,14 +61,12 @@
 </head>
 
 <body>
-    <h1>APRSWeb</h1>
     <div id="mapid"></div>
     <div id="points">
     </div>
     <div class="info">
         <h2>What?</h2>
-        <p>This displays all APRS checkins my RTL-SDR has seen in the past hour.</p>
-        <p>This Golang app talks to Direwolf on a (separate) RasPI to get APRS frames, and uses <a
+        <p>This Golang app talks to Direwolf on a (separate) RasPI to listen for APRS frames, and uses <a
                 href="https://github.com/twitchtv/twirp">Twirp</a> to serialize those frames into JSON or protobuf (<a
                 href="/static/assets/aprsweb.proto">schema here</a>) objects.</p>
         <h3>API access</h3>
@@ -80,17 +78,15 @@
             want to see.</p>
 
         <p>Source code available at <a href="https://github.com/ccmolik/aprsweb">github</a>
-            <p>Also available on the Internet at <a href="https://aprsweb.svc.ccmo.me">https://aprsweb.svc.ccmo.me</a>
             </p>
             <hr />
-            <p><button id="poke" onClick="dump()">Click here to dump a list of all checkins I've seen</button></p>
+            <p><button id="poke" onClick="dump()">dump all checkins</button></p>
             <div id="packets"></div>
             <p>Map icons via <a href="https://github.com/hessu/aprs-symbols/">https://github.com/hessu/aprs-symbols/</a>
             </p>
-
+    </div>
 </body>
 <script>
-    // https://stackoverflow.com/questions/3426404/create-a-hexadecimal-colour-based-on-a-string-with-javascript
 
     var stringToColour = function (str) {
         var hash = 0;
@@ -419,6 +415,18 @@
             }, ),
             "/^": L.divIcon({
                 className: "large-plane-sprite",
+                iconSize: iconSize
+            }, ),
+            "\\k": L.divIcon({
+                className: "large-rv-sprite",
+                iconSize: iconSize
+            }, ),
+            "/$": L.divIcon({
+                className: "phone",
+                iconSize: iconSize
+            }, ),
+            "1#": L.divIcon({
+                className: "digi",
                 iconSize: iconSize
             }, ),
 

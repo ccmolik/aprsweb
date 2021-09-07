@@ -55,3 +55,21 @@
   background: url(aprs-symbols-24-0.png);
   background-position: -312px -72px;
 }
+.large-rv-sprite {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: -72px -24px;
+}
+.phone {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: 0px -72px;
+}
+.digi {
+  width: 24px;
+  height: 24px;
+  background: url(aprs-symbols-24-0.png);
+  background-position: 0px -48px;
+}

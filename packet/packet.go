@@ -27,7 +27,6 @@ type AGWPEPacket struct {
 // AGWPEPacketFromB64 turns a base64 string into an AGWPE Packet.
 // Useful for debugging / tests.
 func AGWPEPacketFromB64(b64 string) (*AGWPEPacket, error) {
-	// Base64 decode the poor thing
 	buf, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
 		return nil, err
