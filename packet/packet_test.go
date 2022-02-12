@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -105,4 +106,30 @@ func TestMicESymbol(t *testing.T) {
 	assert.NotNil(chkin)
 	assert.Equal(chkin.MapSymbol, ">")
 	assert.Equal(chkin.SymbolTable, "/") // a car
+}
+
+//  2022-02-08 07:53:07 PST: KD2AOY-12>S7TUQT,WIDE1-1,WIDE2-1,qAO,KD2AOY-10:`25alqq>/'"4x}Chris's Subaru - Check out https://aprsweb.svc.ccmo.me|!"&2'D|!wL9!|3
+// Feb 08 07:53:07 kd2aoy-pi direwolf[316]: [0.3] KD2AOY-12>S7TUQT,WIDE1-1,WIDE2-1:`25alqq>/'"4x}Chris's Subaru - Check out https://aprsweb.svc.ccmo.me|!"&2'D|!wL9!|3
+//Feb 08 07:53:07 kd2aoy-pi direwolf[316]: MIC-E, normal car (side view), Byonics TinyTrack3, In Service
+//Feb 08 07:53:07 kd2aoy-pi direwolf[316]: N 37 45.1447, W 122 25.6926, 9 MPH, course 185, alt 318 ft
+//Feb 08 07:53:07 kd2aoy-pi direwolf[316]: Seq=1, A1=472, A2=581
+//Feb 08 07:53:07 kd2aoy-pi direwolf[316]: Chris's Subaru - Check out https://aprsweb.svc.ccmo.me
+//Feb 08 07:53:09 kd2aoy-pi direwolf[316]: Digipeater WIDE1 (probably BKELEY) audio level = 57(28/17)   [NONE]   _|||||||_
+func TestInvert(t *testing.T) {
+	assert := assert.New(t)
+	p, err := AGWPEPacketFromB64("AAAAAEsAAABLRDJBT1ktMTIAUzdUVVFUAAAAAHkAAAAAAAAAAKZuqKqiqGCWiGSCnrJ4hJaKmIqy4K6SiIpiQOCukoiKZEBjA/BgMjVhbHFxPi8nIjR4fUNocmlzJ3MgU3ViYXJ1IC0gQ2hlY2sgb3V0IGh0dHBzOi8vYXByc3dlYi5zdmMuY2Ntby5tZXwhIiYyJ0R8IXdMOSF8")
+	assert.NoError(err)
+	assert.NotNil(p)
+	chkin, err := ParseAX25Frame(p.Data)
+	assert.Equal(toFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.75233)
+	assert.Equal(toFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 5), -122.42817)
+
+}
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func toFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }

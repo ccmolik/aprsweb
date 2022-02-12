@@ -15,7 +15,7 @@ func DMHToDecimal(degrees float64, minutes float64, hundredthsOfMinutes float64)
 	decDegrees := decimal.NewFromFloat(degrees)
 	decMinutes := decimal.NewFromFloat(minutes)
 	decHundredths := decimal.NewFromFloat(hundredthsOfMinutes)
-	return decDegrees.Add(decMinutes.Div(sixtyDec)).Add((decHundredths.Div(sixkDec)))
+	return decDegrees.Add(decMinutes.Div(sixtyDec)).Add(decHundredths.Div(sixkDec))
 }
 
 // LocationDataToLatLng converts an APRS location data string without the header into lat, lng in decimal
