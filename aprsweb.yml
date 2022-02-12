@@ -1,6 +1,6 @@
 ---
 # APRSweb
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: aprsweb
@@ -10,62 +10,54 @@ spec:
   selector:
     matchLabels:
       app: aprsweb
-      role: master
-      tier: backend
   replicas: 1
   template:
     metadata:
       labels:
         app: aprsweb
-        role: master
-        tier: backend
     spec:
       containers:
       - name: aprsweb
-        image: dr.ccmo.me:8443/aprsweb:v17
+        image: dr.ccmo.me:8443/aprsweb:v23
         ports:
         - containerPort: 5000
         env:
           - name: DEBUG
-            value: "1"
-          - name: POTATO
-            value: "8"
+            value: "more"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: aprsweb
-  labels:
-    app: aprsweb
-    role: master
-    tier: backend
 spec:
   ports:
-    - port: 5000
+    - protocol: TCP 
+      port: 5000
       targetPort: 5000
   selector:
     app: aprsweb
-    role: master
-    tier: backend
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
     cert-manager.io/issuer: letsencrypt
-    kubernetes.io/ingress.class: nginx
   generation: 5
   name: aprsweb
   namespace: default
 spec:
+  ingressClassName: nginx
   rules:
-  - host: aprsweb.svc.ccmo.me
+  - host: "aprsweb.svc.ccmo.me"
     http:
       paths:
-      - backend:
-          serviceName: aprsweb
-          servicePort: 5000
-        path: /
+      - path: /
+        pathType: Prefix
+        backend:
+         service:
+            name: aprsweb
+            port:
+              number: 5000
   tls:
   - hosts:
     - aprsweb.svc.ccmo.me
