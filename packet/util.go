@@ -7,15 +7,17 @@ import (
 )
 
 // DMHToDecimal converts APRS Degree Minutes HundredthsOfMinutes spec to a decimal representation
-func DMHToDecimal(degrees float64, minutes float64, hundredthsOfMinutes float64) decimal.Decimal {
+func DMHToDecimal(degrees float64, minutes float64, seconds float64) decimal.Decimal {
 	sixtyDec := decimal.NewFromFloat(float64(60))
 	// hundredDec := decimal.NewFromFloat(float64(100))
-	sixkDec := decimal.NewFromFloat(float64(6000))
+	thirtysixhundredDec := decimal.NewFromFloat(float64(3600))
 
 	decDegrees := decimal.NewFromFloat(degrees)
 	decMinutes := decimal.NewFromFloat(minutes)
-	decHundredths := decimal.NewFromFloat(hundredthsOfMinutes)
-	return decDegrees.Add(decMinutes.Div(sixtyDec)).Add(decHundredths.Div(sixkDec))
+	decHundredths := decimal.NewFromFloat(seconds)
+	return decDegrees.
+		Add(decMinutes.Div(sixtyDec)).
+		Add(decHundredths.Div(thirtysixhundredDec))
 }
 
 // LocationDataToLatLng converts an APRS location data string without the header into lat, lng in decimal
@@ -31,7 +33,7 @@ func LocationDataToLatLng(locationString []byte) (decimal.Decimal, decimal.Decim
 	latDegrees, _ := strconv.ParseFloat(string(locationString[0:2]), 64)
 	latMinutes, _ := strconv.ParseFloat(string(locationString[2:4]), 64)
 	latHundredths, _ := strconv.ParseFloat(string(locationString[5:7]), 64)
-	latitude := DMHToDecimal(latDegrees, latMinutes, latHundredths)
+	latitude := DMHToDecimal(latDegrees, latMinutes+(latHundredths/100), 0)
 
 	if locationString[7] == 0x53 {
 		latitude = latitude.Neg()
@@ -43,7 +45,7 @@ func LocationDataToLatLng(locationString []byte) (decimal.Decimal, decimal.Decim
 	lngMinutes, _ := strconv.ParseFloat(string(locationString[12:14]), 64)
 	lngHundredths, _ := strconv.ParseFloat(string(locationString[15:17]), 64)
 
-	longitude := DMHToDecimal(lngDegrees, lngMinutes, lngHundredths)
+	longitude := DMHToDecimal(lngDegrees, lngMinutes+(lngHundredths/100), 0)
 	if locationString[17] == 0x57 {
 		longitude = longitude.Neg()
 	}

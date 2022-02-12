@@ -227,13 +227,10 @@ func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
 			}
 		}
 	}
-	// Insert a decimal point for formatting
-	// latString = latString[:2] + "." + latString[2:]
-
 	latitudeDegrees, _ := strconv.ParseFloat(latString[:2], 64)
 	latitudeMinutes, _ := strconv.ParseFloat(latString[2:4], 64)
 	latitudeHundredthsOfMinutes, _ := strconv.ParseFloat(latString[4:], 64)
-	computedLat := DMHToDecimal(latitudeDegrees, latitudeMinutes+(latitudeHundredthsOfMinutes/100), 0)
+	computedLat := DMHToDecimal(latitudeDegrees, latitudeMinutes, latitudeHundredthsOfMinutes)
 	if !isLatNorth {
 		computedLat = computedLat.Neg()
 	}
@@ -249,12 +246,12 @@ func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
 			longitudeDegrees -= 190
 		}
 	}
-	longtitudeMinutes := (float64)(frame[2]) - 28
-	if longtitudeMinutes >= 60 {
-		longtitudeMinutes -= 60
+	longitudeMinutes := (float64)(frame[2]) - 28
+	if longitudeMinutes >= 60 {
+		longitudeMinutes -= 60
 	}
-	min, _ := decimal.NewFromInt((int64)(frame[2]) - 28).Add((decimal.NewFromInt((int64)(frame[3]) - 28)).Div(decimal.NewFromInt(100))).Float64()
-	computedLongitude := DMHToDecimal(longitudeDegrees, min, 0)
+	lngSec := float64((int64)(frame[3]) - 28)
+	computedLongitude := DMHToDecimal(longitudeDegrees, longitudeMinutes, lngSec)
 	if isLngWest {
 		computedLongitude = computedLongitude.Neg()
 	}

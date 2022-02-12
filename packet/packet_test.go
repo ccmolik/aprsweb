@@ -7,29 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// func TestParseMicE(t *testing.T) {
-// 	p := AX25Frame{
-// 		DestAddr: "S32U6T",
-// 		IsMICE:   true,
-// 	}
-// 	fmt.Printf("%s", parseMicE(p))
-// }
-
-/*
-May 17 22:56:29 kd2aoy-pi sh[307]: Digipeater WIDE1 (probably BKELEY) audio level = 98(22/20)   [NONE]   |||||____
-May 17 22:56:29 kd2aoy-pi sh[307]: [0.2] AG6JA>APOTU0,BKELEY,WIDE1*,WIDE2-2:!/;T>+/Z7ckxCG
-May 17 22:56:29 kd2aoy-pi sh[307]: Position, truck, Open Track
-May 17 22:56:29 kd2aoy-pi sh[307]: N 37 26.9741, W 122 07.1746, 15 MPH, course 348
-May 17 22:56:29 kd2aoy-pi sh[307]: Error getting message header from AGW client application 0.
-*/
-
-/*
-May 17 23:15:44 kd2aoy-pi sh[307]: [0.2] AG6JA>APOTU0,BKELEY,WIDE1*,WIDE2-2:!/;T/2/ZC7k1?G
-May 17 23:15:44 kd2aoy-pi sh[307]: Position, truck, Open Track
-May 17 23:15:44 kd2aoy-pi sh[307]: N 37 27.1880, W 122 06.8445, 10 MPH, course 64
-panic: runtime error: index out of range [17] with length 13
-*/
-
 func TestBreakerWithRange(t *testing.T) {
 	assert := assert.New(t)
 
@@ -121,15 +98,30 @@ func TestInvert(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(p)
 	chkin, err := ParseAX25Frame(p.Data)
-	assert.Equal(toFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.75233)
-	assert.Equal(toFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 5), -122.42817)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.75389)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 4), -122.4358)
+
+}
+
+// Feb 12 11:10:17 kd2aoy-pi direwolf[316]: [0.4] WA6HCW-1>S7RQRQ,AI6KG-12,BKELEY,WIDE2*:`2]Il#U>/"4]}
+//Feb 12 11:10:17 kd2aoy-pi direwolf[316]: MIC-E, normal car (side view), Unknown manufacturer, In Service
+//Feb 12 11:10:17 kd2aoy-pi direwolf[316]: N 37 21.2100, W 122 05.4500, 0 MPH, course 357, alt 230 ft
+// 37°21.21' N 122°05.45' W on aprs.fi
+func TestBustedMicE(t *testing.T) {
+	assert := assert.New(t)
+	p, err := AGWPEPacketFromB64("AAAAAEsAAABXQTZIQ1ctMQAAUzdSUVJRAAAAADMAAAAAAAAAAKZupKKkomCugmyQhq5igpJslo5A+ISWipiKsuCukoiKZEDhA/BgMl1JbCNVPi8iNF0=")
+	assert.NoError(err)
+	assert.NotNil(p)
+	chkin, err := ParseAX25Frame(p.Data)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.35583)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 6), -122.095833)
 
 }
 func round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }
 
-func toFixed(num float64, precision int) float64 {
+func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
 }
