@@ -230,7 +230,7 @@ func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
 	latitudeDegrees, _ := strconv.ParseFloat(latString[:2], 64)
 	latitudeMinutes, _ := strconv.ParseFloat(latString[2:4], 64)
 	latitudeHundredthsOfMinutes, _ := strconv.ParseFloat(latString[4:], 64)
-	computedLat := DMHToDecimal(latitudeDegrees, latitudeMinutes, latitudeHundredthsOfMinutes)
+	computedLat := DMHToDecimal(latitudeDegrees, latitudeMinutes+(latitudeHundredthsOfMinutes/100), 0)
 	if !isLatNorth {
 		computedLat = computedLat.Neg()
 	}
@@ -251,7 +251,7 @@ func parseMicE(checkin *pb.Checkin, frame []byte) LatLng {
 		longitudeMinutes -= 60
 	}
 	lngSec := float64((int64)(frame[3]) - 28)
-	computedLongitude := DMHToDecimal(longitudeDegrees, longitudeMinutes, lngSec)
+	computedLongitude := DMHToDecimal(longitudeDegrees, longitudeMinutes+(lngSec/100), 0)
 	if isLngWest {
 		computedLongitude = computedLongitude.Neg()
 	}

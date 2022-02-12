@@ -98,8 +98,8 @@ func TestInvert(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(p)
 	chkin, err := ParseAX25Frame(p.Data)
-	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.75389)
-	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 4), -122.4358)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 4), 37.7523)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 4), -122.4282)
 
 }
 
@@ -113,8 +113,8 @@ func TestBustedMicE(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(p)
 	chkin, err := ParseAX25Frame(p.Data)
-	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.35583)
-	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 6), -122.095833)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLatitude(), 5), 37.3535)
+	assert.Equal(ToFixed(chkin.GetLocationCheckin().GetLocation().GetLongitude(), 4), -122.0908)
 
 }
 func round(num float64) int {
