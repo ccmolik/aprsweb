@@ -53,7 +53,7 @@ func serveIndex() http.Handler {
 
 func main() {
 	flag.StringVar(&webListenAddr, "l", ":5000", "webserver listen address")
-	flag.StringVar(&agwpeServer, "s", "kd2aoy-pi", "AGWPE/Direwolf server address")
+	flag.StringVar(&agwpeServer, "s", "localhost", "AGWPE/Direwolf server address")
 	flag.IntVar(&agwpePort, "p", 8000, "AGWPE/Direwolf server port")
 	flag.Parse()
 
