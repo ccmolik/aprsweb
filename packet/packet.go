@@ -105,8 +105,10 @@ func ParseAX25Frame(inputBytes []byte) (*pb.Checkin, error) {
 			}
 			// yes, these are reversed
 			// this is why i drink
-			retCheckin.MapSymbol = string([]byte{APRSData[7]})
-			retCheckin.SymbolTable = string([]byte{APRSData[8]})
+			if len(APRSData) > 8 {
+				retCheckin.MapSymbol = string([]byte{APRSData[7]})
+				retCheckin.SymbolTable = string([]byte{APRSData[8]})
+			}
 
 		}
 		if APRSData[0] == 0x2f || APRSData[0] == 0x40 || APRSData[0] == 0x3d || APRSData[0] == 0x21 {
