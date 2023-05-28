@@ -58,7 +58,6 @@ overwrites this, you should end up with an all-in-one binary that
 includes all of the js/html assets.
 
 ## TODO
-* Change the default server from `kd2aoy-pi`
 * Provide an easier way to customize:
     * Map starting position
     * Map zoom
@@ -68,4 +67,7 @@ includes all of the js/html assets.
     * Displaying a specific station's checkins only
 * Automatically refresh the map every minute or so
 * ~Use specific icons for different station checkins~ (In progress)
+* Provide a way to swap out map API keys; migrate out of go-bindata into something more native
+* Integrate twirp / pb generation into Makefile better
+* APRS test cd has some issues with Mic-E data, leading to screwed up lat/lng (specifically AC6VV-9)
 * Write better docs :)
