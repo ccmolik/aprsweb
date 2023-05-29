@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/ccmolik/aprsweb"
 	"log"
 	"net/http"
 	"time"
@@ -9,7 +10,6 @@ import (
 	_ "net/http/pprof"
 
 	pb "github.com/ccmolik/aprsweb-proto/rpc/aprsweb"
-	"github.com/ccmolik/aprsweb/bindata"
 	"github.com/ccmolik/aprsweb/internal/aprswebtwirp"
 	"github.com/ccmolik/aprsweb/internal/packethandler"
 	"github.com/ccmolik/aprsweb/internal/packetstore"
@@ -43,7 +43,7 @@ func RequestLogger(targetMux http.Handler) http.Handler {
 // serveIndex handles serving the index.html file out of the assets bindata
 func serveIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		index, err := bindata.Asset("assets/index.html")
+		index, err := aprsweb.StaticAssets.ReadFile("assets/index.html")
 		if err != nil {
 			panic("Couldn't get index.html")
 		}
@@ -64,7 +64,7 @@ func main() {
 		Port:            int32(agwpePort),
 	}
 	// Load the JSON blob of symbols into memory or panic
-	jsonDescriptor, err := bindata.Asset("assets/symbols.dense.json")
+	jsonDescriptor, err := aprsweb.StaticAssets.ReadFile("assets/symbols.dense.json")
 	if err != nil {
 		panic("Couldn't load symbols.dense.json from assets dir, not continuing: " + err.Error())
 	}
@@ -93,7 +93,8 @@ func main() {
 
 	log.Printf("TWIRP handler available at %s", twirpHandler.PathPrefix())
 	mux.Handle(twirpHandler.PathPrefix(), twirpHandler)
-	mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(bindata.AssetFile())))
+
+	mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.FS(aprsweb.StaticAssets))))
 	// // mux.Handle("/list", h.DumpList(&receivedFrames))
 	mux.Handle("/", serveIndex())
 	err = http.ListenAndServe(webListenAddr, RequestLogger(mux))

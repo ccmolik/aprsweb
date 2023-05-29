@@ -110,3 +110,4 @@ tags
 /aprsweb-native
 bindata.go
 aprsweb.yml
+.idea/

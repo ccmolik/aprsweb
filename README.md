@@ -17,11 +17,6 @@ API for your APRS frames.
 You'll need `git`, `golang` `protoc-gen-twirp`, and `protoc` per the
 [Twirp guide](https://github.com/twitchtv/twirp#installation).
 
-You will also need `go-bindata`:
-```
-go get -u github.com/go-bindata/go-bindata/... 
-```
-
 Once you have everything installed, run `make`.
 
 This will output `aprsweb` as an ARMv6 Linux binary, and
@@ -45,18 +40,16 @@ An example Kubernetes deployment is included at `aprsweb.yml` for
 those with letencrypt and nginx-ingress running.
 
 ## Development
-When hacking locally, run `bindata` with debug mode enabled so you can
-hot-reload files.
+
+I pipe the TNC test CD to Direwolf to play back synthetic packets, such as:
+```
+$ cat ~/direwolf.dummy
+ADEVICE - null
+CHANNEL 0
+
+$ ffmpeg -i ~/TNC_Test_Ver-1.1.00.wav -f s16le -acodec pcm_s16le -ac 1 pipe: | direwolf -t 0 -r44100 -c ~/direwolf.dummy -
 
 ```
-go-bindata -pkg bindata -debug -o bindata/bindata.go -fs -prefix "static/" assets/...
-
-```
-
-Since we have `bindata/bindata.go` in `.gitignore` and `make` always
-overwrites this, you should end up with an all-in-one binary that
-includes all of the js/html assets.
-
 ## TODO
 * Provide an easier way to customize:
     * Map starting position
@@ -67,7 +60,7 @@ includes all of the js/html assets.
     * Displaying a specific station's checkins only
 * Automatically refresh the map every minute or so
 * ~Use specific icons for different station checkins~ (In progress)
-* Provide a way to swap out map API keys; migrate out of go-bindata into something more native
+* Provide a way to swap out map API keys
 * Integrate twirp / pb generation into Makefile better
 * APRS test cd has some issues with Mic-E data, leading to screwed up lat/lng (specifically AC6VV-9)
 * Write better docs :)
